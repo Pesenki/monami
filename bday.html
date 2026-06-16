@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>~$ ./congrats.sh</title>
+<style>
+  :root{
+    --bg:#0c0f0a;
+    --crt-green:#33ff66;
+    --crt-dim:#1c8a3c;
+    --amber:#ffb000;
+    --screen-glass:rgba(20,30,20,0.15);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:#000;
+    font-family:'Courier New',monospace;
+  }
+  body{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;
+    padding:20px;
+  }
+  .monitor{
+    background:linear-gradient(160deg,#1a1a1a,#050505);
+    border-radius:18px;
+    padding:22px 22px 34px;
+    box-shadow:0 0 0 2px #2b2b2b, 0 25px 60px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.8);
+    max-width:880px;
+    width:100%;
+  }
+  .screen{
+    position:relative;
+    background:var(--bg);
+    border-radius:6px;
+    padding:28px 30px;
+    overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(0,0,0,0.85);
+    min-height:520px;
+  }
+  .screen::before{
+    content:"";
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.035) 0px,
+      rgba(255,255,255,0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+  .screen::after{
+    content:"";
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
+    pointer-events:none;
+  }
+  pre{
+    margin:0;
+    color:var(--crt-green);
+    text-shadow:0 0 2px var(--crt-green), 0 0 8px rgba(51,255,102,0.45);
+    font-size:13px;
+    line-height:1.35;
+    white-space:pre;
+    position:relative;
+    z-index:1;
+  }
+  .amber{color:var(--amber);text-shadow:0 0 2px var(--amber),0 0 8px rgba(255,176,0,0.45);}
+  .dim{color:var(--crt-dim);text-shadow:none;}
+  .cursor{
+    display:inline-block;
+    width:8px;height:14px;
+    background:var(--crt-green);
+    box-shadow:0 0 8px rgba(51,255,102,0.6);
+    vertical-align:middle;
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .led{
+    display:flex;gap:10px;justify-content:flex-end;margin-top:8px;padding-right:6px;
+  }
+  .led span{
+    width:8px;height:8px;border-radius:50%;
+    background:#1c8a3c;
+    box-shadow:0 0 6px #33ff66;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .led span:nth-child(2){animation-delay:.5s;background:#a86a00;box-shadow:0 0 6px #ffb000;}
+  .led span:nth-child(3){animation-delay:1s;}
+  @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+  .hint{
+    text-align:center;color:#555;font-size:12px;margin-top:14px;
+    font-family:'Courier New',monospace;
+    letter-spacing:.5px;
+  }
+  #out{display:block;}
+</style>
+</head>
+<body>
+
+<div class="monitor">
+  <div class="screen">
+    <pre id="out"></pre>
+  </div>
+  <div class="led"><span></span><span></span><span></span></div>
+</div>
+<!-- <div class="hint">нажми, чтобы перезапустить скрипт →&nbsp;<span id="rerun" style="text-decoration:underline;cursor:pointer;color:#888;">./congrats.sh</span></div> -->
+<div class="hint"><span id="rerun" style="text-decoration:underline;cursor:pointer;color:#888;"></span></div>
+
+<script>
+const FRAMES_BOOT = [
+"root@bday-server:~$ sudo ./congrats.sh --target=\"JANMON\"",
+"[ INFO ] Проверка прав доступа.......... OK",
+"[ INFO ] Поднимаю сервис праздника....... OK",
+"[ INFO ] Загружаю cake.iso............ ",
+];
+
+const CAKE = [
+"          .  .  .  .",
+"         (    )    )",
+"          \`-.....-'",
+"      _.-\"\"\"\"\"\"\"\"\"-._",
+"     /  .  .  .  .   \\",
+"    |   ░░░░░░░░░░░   |",
+"    |   ░░  CAKE ░░   |",
+"    |   ░░░░░░░░░░░   |",
+"     \\___________ ___/",
+"     [___________|___]",
+];
+
+const SERVER_ART = [
+"      ┌──────────────────────┐",
+"      │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │  ● PWR",
+"      │ ░ UPTIME: ALWAYS ░░░ │  ● LAN",
+"      │ ░░░░░░░░░░░░░░░░░░░░ │  ● HDD",
+"      ├──────────────────────┤",
+"      │ [■][■][■][■][■][■][■]│",
+"      └──────────────────────┘",
+];
+
+const BANNER = [
+" ███████████   ███             █████    █████          █████                         ███████     █████████ ",
+"░░███░░░░░███ ░░░             ░░███    ░░███          ░░███                        ███░░░░░███  ███░░░░░███",
+" ░███    ░███ ████  ████████  ███████   ░███████    ███████   ██████   █████ ████ ███     ░░███░███    ░░░ ",
+" ░██████████ ░░███ ░░███░░███░░░███░    ░███░░███  ███░░███  ░░░░░███ ░░███ ░███ ░███      ░███░░█████████ ",
+" ░███░░░░░███ ░███  ░███ ░░░   ░███     ░███ ░███ ░███ ░███   ███████  ░███ ░███ ░███      ░███ ░░░░░░░░███",
+" ░███    ░███ ░███  ░███       ░███ ███ ░███ ░███ ░███ ░███  ███░░███  ░███ ░███ ░░███     ███  ███    ░███",
+" ███████████  █████ █████      ░░█████  ████ █████░░████████░░████████ ░░███████  ░░░███████░  ░░█████████ ",
+"░░░░░░░░░░░  ░░░░░ ░░░░░        ░░░░░  ░░░░ ░░░░░  ░░░░░░░░  ░░░░░░░░   ░░░░░███    ░░░░░░░     ░░░░░░░░░  ",
+"                                                                        ███ ░███                           ",
+"                                                                       ░░██████                            ",
+"                                                                        ░░░░░░                             ",
+];
+
+const LOG_LINES = [
+"systemd[1]: Started birthday-party.service",
+"kernel: [    0.001337] grats: initializing mood subsystem",
+"sysadmin-core: подключено 24 интерфейса заботы, все UP",
+"firewall: правило DROP ALL STRESS — добавлено",
+"firewall: правило ACCEPT ALL HAPPINESS — добавлено",
+"cron: задача \"отдыхать иногда\" наконец-то поставлена в очередь",
+"backup: создан snapshot отличного настроения (rotate: never)",
+"monitoring: алерты по нагрузке отключены на сегодня",
+"DHCP: тебе назначен статический IP радости 255.255.255.255",
+"NOTICE: root доступ к праздничному торту выдан без sudo",
+];
+
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function typeLine(el, text, speed=14){
+  for(let i=0;i<text.length;i++){
+    el.textContent += text[i];
+    await delay(speed);
+  }
+  el.textContent += "\n";
+}
+
+async function printInstant(el, text){
+  el.textContent += text + "\n";
+  await delay(40);
+}
+
+function art(lines, cls){
+  return lines.map(l => cls ? `<span class="${cls}">${escapeHtml(l)}</span>` : escapeHtml(l)).join("\n") + "\n";
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+async function run(){
+  const out = document.getElementById('out');
+  out.innerHTML = "";
+
+  // boot lines (typed)
+  for(const line of FRAMES_BOOT){
+    const span = document.createElement('span');
+    out.appendChild(span);
+    await typeLine(span, line, 10);
+  }
+  await delay(300);
+
+  // progress bar for "загрузка торта"
+  const bar = document.createElement('span');
+  out.appendChild(bar);
+  let progress = "";
+  for(let i=0;i<20;i++){
+    progress += "█";
+    bar.textContent = "[ INFO ] " + progress.padEnd(20,"░") + `  ${(i+1)*5}%`;
+    await delay(45);
+  }
+  bar.textContent += "\n";
+  await delay(150);
+
+  out.innerHTML += "\n";
+
+  // ASCII banner
+  out.innerHTML += `<span class="amber">${art(BANNER)}</span>`;
+  await delay(200);
+
+  out.innerHTML += "\n";
+
+  // log lines streaming
+  for(const l of LOG_LINES){
+    const span = document.createElement('span');
+    out.appendChild(span);
+    const stamp = new Date().toLocaleTimeString('ru-RU');
+    await printInstant(span, `[${stamp}] ${l}`);
+    await delay(120);
+  }
+
+  out.innerHTML += "\n";
+
+  // server + cake side by side (simple sequential since pseudographics easier this way)
+  out.innerHTML += `<span class="dim">${art(SERVER_ART)}</span>`;
+  out.innerHTML += "\n";
+  out.innerHTML += `<span class="amber">${art(CAKE)}</span>`;
+  out.innerHTML += "\n";
+
+  const finalMsg = document.createElement('span');
+  out.appendChild(finalMsg);
+  await typeLine(finalMsg,
+    "С ДНЁМ РОЖДЕНИЯ! Пусть аптайм твоего настроения держится 100% без даунтайма,", 12);
+  const finalMsg2 = document.createElement('span');
+  out.appendChild(finalMsg2);
+  await typeLine(finalMsg2,
+    "бэкапы радости создаются автоматически, а все инциденты — только с тортом и подарками.", 12);
+
+  out.innerHTML += "\n";
+
+  const promptLine = document.createElement('span');
+  out.appendChild(promptLine);
+  promptLine.innerHTML = "root@bday-server:~$ <span class=\"cursor\"></span>";
+}
+
+document.getElementById('rerun').addEventListener('click', run);
+run();
+</script>
+
+</body>
+</html>
